@@ -4,6 +4,7 @@ class apiError extends Error {
     this.message = message;
     this.status = status;
     this.error = error;
+    this.success = false;
   }
 }
 

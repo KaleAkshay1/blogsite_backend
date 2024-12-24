@@ -2,7 +2,7 @@ import express from "express";
 import { addPost } from "../controller/posts.controller.js";
 import { uplode } from "../middleware/multer.middleware.js";
 import pool from "../config/database.connection.js";
-import { acessAllData } from "../services/db.services.js";
+import { accessAllData } from "../services/db.services.js";
 
 const posts = express.Router();
 

@@ -1,7 +1,9 @@
 import jwt from "jsonwebtoken";
 
-const signToken = (paylode) => {
-  const token = jwt.sign(paylode, process.env.JWT_SECRET, { expiresIn: "5s" });
+const signToken = (paylode, expire) => {
+  const token = jwt.sign(paylode, process.env.JWT_SECRET, {
+    expiresIn: expire,
+  });
   return token;
 };
 

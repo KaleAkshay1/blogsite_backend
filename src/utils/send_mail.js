@@ -20,7 +20,6 @@ const sendMail = async (to, sub, text) => {
     };
 
     let result = await transporter.sendMail(mailOption);
-    console.log(result);
     return true;
   } catch (error) {
     return false;

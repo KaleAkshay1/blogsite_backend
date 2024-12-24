@@ -1,28 +1,59 @@
 import pool from "../config/database.connection.js";
 
-const acessAllData = async (tabel, limit = 12, offset = 0) => {
-  const [result] = await pool.query(
-    `SELECT * FROM ${tabel} limit ${limit} offset ${offset}`
-  );
+const accessAllData = async (table, limit = 12, offset = 0) => {
+  const query = `SELECT * FROM ?? LIMIT ? OFFSET ?`;
+  const [result] = await pool.query(query, [table, limit, offset]);
   return result;
 };
 
-const acessApecificData = async (tabel, limit = 12, offset = 0, ...data) => {
-  const [result] = await pool.query(
-    `select ${data.join(",")} from ${tabel} limit ${limit} offset ${offset}`
-  );
+const accessSpecificData = async (
+  table,
+  limit = 12,
+  offset = 0,
+  ...columns
+) => {
+  const query = `SELECT ${columns
+    .map(() => "??")
+    .join(", ")} FROM ?? LIMIT ? OFFSET ?`;
+  const [result] = await pool.query(query, [...columns, table, limit, offset]);
   return result;
 };
 
-const accessById = async (tabel, id) => {
-  const [result] = await pool.query(`SELECT * FROM ${tabel} where id=${id}`);
+const accessById = async (table, id) => {
+  const query = `SELECT * FROM ?? WHERE id = ?`;
+  const [result] = await pool.query(query, [table, id]);
+  return result;
+};
+const checkUserExist = async (email) => {
+  const query = `SELECT * FROM users where email = ? limit 1`;
+  const [result] = await pool.query(query, [email]);
   return result;
 };
 
-const accessByCondition = async (tabel, condition, limit = 12, offset = 0) => {
-  const [result] = await pool.query(
-    `SELECT * FROM ${tabel} where ${condition} limit ${limit} offset ${offset}`
-  );
+const accessByCondition = async (table, condition, limit = 12, offset = 0) => {
+  const query = `SELECT * FROM ?? WHERE ${condition} LIMIT ? OFFSET ?`;
+  const [result] = await pool.query(query, [table, limit, offset]);
+  return result;
 };
 
-export { acessAllData, acessApecificData, accessById, accessByCondition };
+const createUser = async (data) => {
+  const query = `INSERT INTO users(${Object.keys(data)
+    .map((ele) => "??")
+    .join(",")}) value(${Object.values(data)
+    .map((ele) => "?")
+    .join(",")})`;
+  const [result] = await pool.query(query, [
+    ...Object.keys(data),
+    ...Object.values(data),
+  ]);
+  return result;
+};
+
+export {
+  accessAllData,
+  accessSpecificData,
+  accessById,
+  accessByCondition,
+  createUser,
+  checkUserExist,
+};
