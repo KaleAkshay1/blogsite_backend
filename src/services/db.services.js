@@ -49,6 +49,12 @@ const createUser = async (data) => {
   return result;
 };
 
+const updatePassword = async (email, pass) => {
+  const query = "UPDATE users SET password = ? WHERE email = ? LIMIT 1";
+  const result = await pool.query(query, [pass, email]);
+  return result[0].affectedRows > 0;
+};
+
 export {
   accessAllData,
   accessSpecificData,
@@ -56,4 +62,5 @@ export {
   accessByCondition,
   createUser,
   checkUserExist,
+  updatePassword,
 };

@@ -6,6 +6,7 @@ import {
   accessById,
   checkUserExist,
   createUser,
+  updatePassword,
 } from "../services/db.services.js";
 import { checkEncryptedPass, encryptPass } from "../utils/bcrypt.js";
 import { signToken, verifyToken } from "../utils/jwt.js";
@@ -32,16 +33,18 @@ const registerUser = asyncHandler(async (req, res) => {
   if (!emailsend) {
     throw new apiError(401, "invalid email");
   }
-  const encryptedOtp = await signToken({ otp, ip: req.ip }, "5m");
+  const encryptedData = await signToken(req.body, "6m");
+  const encryptedOtp = await signToken(
+    { otp, ip: req.ip, data: encryptedData },
+    "5m"
+  );
 
   res
-    .cookie("otp", encryptedOtp, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "Strict",
-    })
+    .cookie("otp", encryptedOtp)
     .status(200)
-    .json(new ApiResponse(200, req.body));
+    .json(
+      new ApiResponse(200, [], `Otp send On ${email} for email verification`)
+    );
 });
 
 const checkOtp = asyncHandler(async (req, res) => {
@@ -52,32 +55,40 @@ const checkOtp = asyncHandler(async (req, res) => {
   }
 
   const decodedOtp = await verifyToken(otp);
+  if (!decodedOtp) {
+    throw new apiError(401, "TimeOut OTP Expire");
+  }
   if (String(decodedOtp.otp) !== body?.otp) {
     throw new apiError(401, "invalid OTP");
   }
   if (decodedOtp.ip !== req.ip) {
     throw new apiError(401, "Access Denied");
   }
-  if (!body.password) {
+  const decodedData = await verifyToken(decodedOtp.data);
+  if (!decodedOtp) {
+    throw new apiError(401, "Access Denied");
+  }
+  if (!decodedData.password) {
     throw new apiError(404, "plese send password");
   }
-  const hashedPass = await encryptPass(body.password);
+  console.log(decodedData);
+  const hashedPass = await encryptPass(decodedData.password);
   const user = await createUser({
-    username: body.username,
-    email: body.email,
+    username: decodedData.username,
+    email: decodedData.email,
     password: hashedPass,
   });
   if (!user || user.length < 1) throw new apiError(200, "invalide data");
   res
     .clearCookie("otp")
     .status(200)
-    .json(new ApiResponse(200, "register successfully"));
+    .json(new ApiResponse(200, [], "register successfully"));
 });
 
 const logIn = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) {
-    throw new apiError(400, "username and password require");
+    throw new apiError(400, "email and password require");
   }
   const user = await checkUserExist(email);
   if (user.length < 1) {
@@ -151,7 +162,11 @@ const forgotPassword = asyncHandler(async (req, res) => {
   if (!emailsend) {
     throw new apiError(401, "invalid email");
   }
-  const encryptedOtp = await signToken({ otp, ip: req.ip }, "5m");
+  const encryptedData = await signToken(req.body, "6m");
+  const encryptedOtp = await signToken(
+    { otp, ip: req.ip, data: encryptedData },
+    "5m"
+  );
   res
     .cookie("forgot_otp", encryptedOtp, {
       httpOnly: true,
@@ -159,10 +174,16 @@ const forgotPassword = asyncHandler(async (req, res) => {
       sameSite: "Strict",
     })
     .status(200)
-    .json(new ApiResponse(200, req.body));
+    .json(
+      new ApiResponse(
+        200,
+        [],
+        `OTP send succesfully on ${email} for forgot OTP`
+      )
+    );
 });
 
-const checkForgotOtp = asyncHandler(async () => {
+const checkForgotOtp = asyncHandler(async (req, res) => {
   const { otp } = req.body;
   const { forgot_otp } = req.cookies;
   if (!otp || !forgot_otp) {
@@ -179,12 +200,25 @@ const checkForgotOtp = asyncHandler(async () => {
     throw new apiError(401, "Access Denied");
   }
   res
-    .clearCookie("decode_forgot_otp")
+    .clearCookie("forgot_otp")
     .status(200)
     .json(new ApiResponse(200, "verified otp", "otp verify successfull"));
 });
 
-const newPassword = asyncHandler(async (req, res) => {});
+const newPassword = asyncHandler(async (req, res) => {
+  const { email, password } = req.body;
+  if (!email || !password) {
+    throw new apiError(201, email ? "password is require" : "email is require");
+  }
+  const hashPass = await encryptPass(password);
+  const result = await updatePassword(email, hashPass);
+  if (!result) {
+    throw new apiError(200, "invalid email");
+  }
+  res
+    .status(200)
+    .json(new ApiResponse(200, result, "Forgot password succesfull"));
+});
 
 export {
   registerUser,
@@ -194,4 +228,5 @@ export {
   checkAuth,
   forgotPassword,
   checkForgotOtp,
+  newPassword,
 };

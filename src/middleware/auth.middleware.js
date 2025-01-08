@@ -6,7 +6,7 @@ import { verifyToken } from "../utils/jwt.js";
 const authMiddelware = asyncHandler(async (req, res, next) => {
   const token = req.cookies?.loginToken;
   if (!token) {
-    throw new apiError(401, "Access Denite");
+    throw new apiError(401, "Unautorizze persone");
   }
   const verifiedToken = await verifyToken(token);
   if (!verifiedToken.id) {
