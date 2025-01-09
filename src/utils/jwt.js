@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 
-const signToken = (paylode, expire) => {
+const signToken = (paylode, expire = "10m") => {
   const token = jwt.sign(paylode, process.env.JWT_SECRET, {
     expiresIn: expire,
   });

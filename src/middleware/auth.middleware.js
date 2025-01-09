@@ -19,6 +19,7 @@ const authMiddelware = asyncHandler(async (req, res, next) => {
   if (user.length !== 1) {
     throw new apiError(401, "2Invalid user");
   }
+  req.user = user[0]?.id;
   next();
 });
 

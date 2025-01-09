@@ -10,6 +10,7 @@ import {
 } from "../services/db.services.js";
 import { checkEncryptedPass, encryptPass } from "../utils/bcrypt.js";
 import { signToken, verifyToken } from "../utils/jwt.js";
+import { nanoid } from "nanoid";
 
 const registerUser = asyncHandler(async (req, res) => {
   const { username, email, password } = req.body;
@@ -28,8 +29,17 @@ const registerUser = asyncHandler(async (req, res) => {
   if (email.split("@").length !== 2 || !(email.split("@")[1].length > 2)) {
     throw new apiError(401, "invalid email");
   }
+  const match = await checkUserExist(email);
+  if (match.length) {
+    throw new apiError(400, "Email alredy taken");
+  }
+  const usermatch = await checkUserExist(username, "username");
+  if (usermatch.length) {
+    throw new apiError(400, "Username alredy taken");
+  }
   const otp = Math.floor(100000 + Math.random() * 900000);
   const emailsend = await sendMail(email, "One Time Password", String(otp));
+  console.log(emailsend);
   if (!emailsend) {
     throw new apiError(401, "invalid email");
   }
@@ -71,9 +81,9 @@ const checkOtp = asyncHandler(async (req, res) => {
   if (!decodedData.password) {
     throw new apiError(404, "plese send password");
   }
-  console.log(decodedData);
   const hashedPass = await encryptPass(decodedData.password);
   const user = await createUser({
+    id: nanoid(),
     username: decodedData.username,
     email: decodedData.email,
     password: hashedPass,
@@ -162,7 +172,7 @@ const forgotPassword = asyncHandler(async (req, res) => {
   if (!emailsend) {
     throw new apiError(401, "invalid email");
   }
-  const encryptedData = await signToken(req.body, "6m");
+  const encryptedData = await signToken(req.body, "1d");
   const encryptedOtp = await signToken(
     { otp, ip: req.ip, data: encryptedData },
     "5m"
@@ -187,7 +197,7 @@ const checkForgotOtp = asyncHandler(async (req, res) => {
   const { otp } = req.body;
   const { forgot_otp } = req.cookies;
   if (!otp || !forgot_otp) {
-    throw new apiError(404, otp ? "plz enter otp again" : "otp is require");
+    throw new apiError(404, otp ? "Plz Send otp again" : "otp is require");
   }
   const decode_forgot_otp = await verifyToken(forgot_otp);
   if (!decode_forgot_otp) {
@@ -201,17 +211,23 @@ const checkForgotOtp = asyncHandler(async (req, res) => {
   }
   res
     .clearCookie("forgot_otp")
+    .cookie("data", decode_forgot_otp?.data)
     .status(200)
     .json(new ApiResponse(200, "verified otp", "otp verify successfull"));
 });
 
 const newPassword = asyncHandler(async (req, res) => {
-  const { email, password } = req.body;
-  if (!email || !password) {
-    throw new apiError(201, email ? "password is require" : "email is require");
+  const { password } = req.body;
+  const { data } = req.cookies;
+  if (!password || !data) {
+    throw new apiError(201, password ? "Try again" : "password is require");
+  }
+  const value = await verifyToken(data);
+  if (!value) {
+    throw new apiError(400, "try again Session expire");
   }
   const hashPass = await encryptPass(password);
-  const result = await updatePassword(email, hashPass);
+  const result = await updatePassword(value.email, hashPass);
   if (!result) {
     throw new apiError(200, "invalid email");
   }
