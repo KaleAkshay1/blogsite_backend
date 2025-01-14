@@ -32,4 +32,8 @@ app.use("/api/posts", posts);
 import comment from "./routes/comment.routes.js";
 app.use("/api/comment", comment);
 
+// import user routes
+import user from "./routes/user.routes.js";
+app.use("/api/user", user);
+
 export default app;

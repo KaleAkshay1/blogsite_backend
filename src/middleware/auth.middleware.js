@@ -17,9 +17,14 @@ const authMiddelware = asyncHandler(async (req, res, next) => {
   }
   const user = await accessById("users", verifiedToken?.id);
   if (user.length !== 1) {
-    throw new apiError(401, "2Invalid user");
+    throw new apiError(401, "Invalid user");
   }
-  req.user = user[0]?.id;
+  req.user = {
+    id: user[0]?.id,
+    username: user[0]?.username,
+    email: user[0]?.email,
+    role: user[0]?.role,
+  };
   next();
 });
 

@@ -39,7 +39,6 @@ const registerUser = asyncHandler(async (req, res) => {
   }
   const otp = Math.floor(100000 + Math.random() * 900000);
   const emailsend = await sendMail(email, "One Time Password", String(otp));
-  console.log(emailsend);
   if (!emailsend) {
     throw new apiError(401, "invalid email");
   }
@@ -53,7 +52,11 @@ const registerUser = asyncHandler(async (req, res) => {
     .cookie("otp", encryptedOtp)
     .status(200)
     .json(
-      new ApiResponse(200, [], `Otp send On ${email} for email verification`)
+      new ApiResponse(
+        200,
+        { email },
+        `Otp send On ${email} for email verification`
+      )
     );
 });
 
@@ -123,6 +126,7 @@ const logIn = asyncHandler(async (req, res) => {
           id: user[0].id,
           username: user[0].username,
           email: user[0].email,
+          role: user[0].role,
           profile_picture: user[0].profile_picture,
           socialLink: user[0].socialLink,
         },
@@ -135,7 +139,7 @@ const logOut = asyncHandler(async (req, res) => {
   res
     .clearCookie("loginToken")
     .status(200)
-    .json(new ApiResponse(200, [], "logout Successfull"));
+    .json(new ApiResponse(200, {}, "logout Successfull"));
 });
 
 const checkAuth = asyncHandler(async (req, res) => {
@@ -154,6 +158,7 @@ const checkAuth = asyncHandler(async (req, res) => {
         id: user[0].id,
         username: user[0].username,
         email: user[0].email,
+        role: user[0].role,
         profile_picture: user[0].profile_picture,
         socialLink: user[0].socialLink,
       },
@@ -187,7 +192,7 @@ const forgotPassword = asyncHandler(async (req, res) => {
     .json(
       new ApiResponse(
         200,
-        [],
+        { email },
         `OTP send succesfully on ${email} for forgot OTP`
       )
     );
