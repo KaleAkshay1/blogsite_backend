@@ -5,7 +5,12 @@ import cookieParser from "cookie-parser";
 const app = express();
 
 // use cors for cros platform origin
-app.use(cors());
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    credentials: true,
+  })
+);
 
 // use middelware for default access of static files
 app.use(express.static("public"));
@@ -15,10 +20,6 @@ app.use(express.json());
 // app.use(express.urlencoded());
 
 app.use(cookieParser());
-
-app.get("/", async (req, res) => {
-  res.status(200).json({ name: "akshay" });
-});
 
 // import user routes
 import auth from "./routes/auth.routes.js";

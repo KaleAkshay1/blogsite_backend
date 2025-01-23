@@ -44,7 +44,11 @@ const createPost = async (data) => {
   return result[0].affectedRows;
 };
 
-const getPostsData = async (limit = process.env.LIMIT, page, category) => {
+const getPostsData = async (
+  limit = Number(process.env.LIMIT),
+  page,
+  category
+) => {
   const offset = (page - 1) * limit;
   if (category) {
     const query = `SELECT posts.id as id, posts.title as title, posts.banner as banner,c.category as category, posts.views as views, posts.created_at as created_at,users.username as username, users.email as email,users.profile_picture as profile_picture FROM posts JOIN users ON posts.user_id = users.id JOIN categorys c ON posts.categoryId = c.id where categoryId = ? LIMIT ? OFFSET ?`;
@@ -97,11 +101,11 @@ const getAllCategories = async () => {
 };
 
 const trendingPost = async (
-  limit = process.env.LIMIT,
+  limit = Number(process.env.LIMIT),
   page = 1,
   category = null
 ) => {
-  const offset = (page - 1) * limit;
+  const offset = (page - 1) * Number(limit);
   if (category) {
     const query =
       "SELECT p.id as id, p.title as title, p.banner as banner,c.category as category, p.views as views, p.created_at as created_at, u.username as username, u.email as email, u.profile_picture as profile_picture FROM posts p JOIN users u ON p.user_id = u.id JOIN categorys c ON p.categoryId = c.id WHERE p.categoryId = ?  ORDER BY p.views DESC LIMIT ? OFFSET ?";
@@ -110,13 +114,13 @@ const trendingPost = async (
   } else {
     const query =
       "SELECT p.id as id, p.title as title, p.banner as banner,c.category as category, p.views as views, p.created_at as created_at, u.username as username, u.email as email, u.profile_picture as profile_picture FROM posts p JOIN users u ON p.user_id = u.id JOIN categorys c ON p.categoryId = c.id  ORDER BY p.views DESC LIMIT ? OFFSET ?";
-    const result = await pool.query(query, [limit, offset]);
+    const result = await pool.query(query, [Number(limit), offset]);
     return result[0];
   }
 };
 
 const latestPost = async (
-  limit = process.env.LIMIT,
+  limit = Number(process.env.LIMIT),
   page = 1,
   category = null
 ) => {
@@ -135,7 +139,7 @@ const latestPost = async (
 };
 
 const randomPost = async (
-  limit = process.env.LIMIT,
+  limit = Number(process.env.LIMIT),
   page = 1,
   category = null
 ) => {
@@ -161,7 +165,11 @@ const updateUser = async (id, data) => {
   return result[0].affectedRows;
 };
 
-const serchPostsResult = async (cat, limit = process.env.LIMIT, page = 1) => {
+const serchPostsResult = async (
+  cat,
+  limit = Number(process.env.LIMIT),
+  page = 1
+) => {
   const offset = (page - 1) * limit;
   const query =
     "SELECT p.id as id, p.title as title, p.banner as banner, c.category as category, p.views as views, p.created_at as created_at,u.username as username, u.profile_picture as profile_picture from posts p JOIN users u ON p.user_id = u.id JOIN categorys c ON p.categoryId = c.id where c.category Like ? OR p.title LIKE ? LIMIT ? OFFSET ?";
@@ -174,7 +182,7 @@ const serchPostsResult = async (cat, limit = process.env.LIMIT, page = 1) => {
   return result[0];
 };
 
-const userPosts = async (id, limit = process.env.LIMIT, page = 1) => {
+const userPosts = async (id, limit = Number(process.env.LIMIT), page = 1) => {
   const offset = (page - 1) * limit;
   const query =
     "SELECT id, title, banner, views,created_at from posts WHERE user_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?";

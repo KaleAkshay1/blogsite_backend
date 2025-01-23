@@ -16,6 +16,8 @@ import ApiResponse from "../utils/apiResponse.js";
 import asyncHandler from "../utils/async_handler.js";
 import { uplodeOnCloudinary } from "../utils/cloudinary.js";
 import { dummy_data, hero } from "../utils/constant.js";
+import { redis } from "../config/redis.connection.js";
+import { delCacheOfBlog } from "../middleware/redis.middelware.js";
 
 const addPost = asyncHandler(async (req, res) => {
   const { categoryId, des, title } = req.body;
@@ -48,6 +50,7 @@ const addPost = asyncHandler(async (req, res) => {
   if (!responce) {
     throw new apiError(400, "Invalid data");
   }
+  const newout = await delCacheOfBlog("blog:");
   res
     .status(200)
     .json(
@@ -75,7 +78,9 @@ const getPosts = asyncHandler(async (req, res) => {
   if (responce?.length < 1) {
     throw new apiError(400, "No data Found");
   }
-  res.status(200).json(new ApiResponse(200, responce));
+  const key = category ? `blog:${category}:${page}` : `blog:${page}`;
+  const sending = await redis.setex(key, 3600, JSON.stringify(responce));
+  res.cookie("key", "val").status(200).json(new ApiResponse(200, responce));
 });
 
 const getTrendingPosts = asyncHandler(async (req, res) => {
@@ -85,6 +90,10 @@ const getTrendingPosts = asyncHandler(async (req, res) => {
   if (responce?.length < 1) {
     throw new apiError(400, "No data Found");
   }
+  const key = category
+    ? `blog:${category}:trending:${page}`
+    : `blog:trending:${page}`;
+  await redis.setex(key, 3600, JSON.stringify(responce));
   res.status(200).json(new ApiResponse(200, responce));
 });
 
@@ -95,6 +104,10 @@ const getLatestPosts = asyncHandler(async (req, res) => {
   if (responce?.length < 1) {
     throw new apiError(400, "No data Found");
   }
+  const key = category
+    ? `blog:${category}:latest:${page}`
+    : `blog:latest:${page}`;
+  await redis.setex(key, 3600, JSON.stringify(responce));
   res.status(200).json(new ApiResponse(200, responce));
 });
 
@@ -115,17 +128,19 @@ const getSingelPost = asyncHandler(async (req, res) => {
 
 const getCategorys = asyncHandler(async (req, res) => {
   const responce = await getAllCategories();
+  await redis.setex("blog:categorys", 3600, JSON.stringify(responce));
   res.status(200).json(new ApiResponse(200, responce));
 });
 
 const getHomePageData = asyncHandler(async (req, res) => {
   const responce = { hero, dummy_data };
-  const trending = await trendingPost();
-  const latest = await latestPost();
-  const random = await randomPost();
+  const trending = await trendingPost(2);
+  const latest = await latestPost(2);
+  const random = await randomPost(2);
   responce.trending = trending;
   responce.latest = latest;
   responce.random = random;
+  await redis.setex("blog:home-page", 3600, JSON.stringify(responce));
   res.status(200).json(new ApiResponse(200, responce));
 });
 

@@ -38,16 +38,18 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new apiError(400, "Username alredy taken");
   }
   const otp = Math.floor(100000 + Math.random() * 900000);
-  const emailsend = await sendMail(email, "One Time Password", String(otp));
+  // const emailsend = await sendMail(email, "One Time Password", String(otp));
+  const emailsend = "send";
   if (!emailsend) {
     throw new apiError(401, "invalid email");
   }
   const encryptedData = await signToken(req.body, "6m");
+  console.log("encryptedData :", encryptedData);
   const encryptedOtp = await signToken(
     { otp, ip: req.ip, data: encryptedData },
     "5m"
   );
-
+  console.log("encryptedOtp :", encryptedOtp);
   res
     .cookie("otp", encryptedOtp)
     .status(200)
